@@ -30,6 +30,27 @@ def safe_output_dir(output_root: Path, stem: str) -> Path:
     return candidate
 
 
+def find_reusable_transcript(output_root: Path, stem: str) -> Path | None:
+    exact = output_root / stem / "transcript.txt"
+    if exact.is_file() and exact.stat().st_size > 0:
+        return exact
+
+    prefix = f"{stem} - "
+    candidates: list[Path] = []
+    for child in output_root.iterdir():
+        if not child.is_dir() or not child.name.startswith(prefix):
+            continue
+        transcript = child / "transcript.txt"
+        if transcript.is_file() and transcript.stat().st_size > 0:
+            candidates.append(transcript)
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0]
+
+
 def load_model(model_name: str, device: str, compute_type: str):
     from faster_whisper import WhisperModel
 
@@ -56,6 +77,11 @@ def main() -> int:
     parser.add_argument("--input", required=True, help="Absolute path to input audio/video file")
     parser.add_argument("--output-root", required=True, help="Root directory for generated output")
     parser.add_argument("--model", default="large-v3", help="Whisper model name")
+    parser.add_argument(
+        "--force-transcribe",
+        action="store_true",
+        help="Ignore an existing transcript and transcribe the source again",
+    )
     args = parser.parse_args()
 
     input_path = Path(os.path.expandvars(os.path.expanduser(args.input))).resolve()
@@ -71,6 +97,16 @@ def main() -> int:
         return 3
 
     output_root.mkdir(parents=True, exist_ok=True)
+
+    if not args.force_transcribe:
+        reusable_transcript = find_reusable_transcript(output_root, input_path.stem)
+        if reusable_transcript is not None:
+            print(f"OUTPUT_DIR={reusable_transcript.parent}")
+            print(f"TRANSCRIPT_PATH={reusable_transcript}")
+            print("DEVICE_USED=reused")
+            print("REUSED_TRANSCRIPT=true")
+            return 0
+
     output_dir = safe_output_dir(output_root, input_path.stem)
     output_dir.mkdir(parents=True, exist_ok=False)
     transcript_path = output_dir / "transcript.txt"
@@ -113,6 +149,7 @@ def main() -> int:
         print(f"TRANSCRIPT_PATH={transcript_path}")
         print(f"DURATION_SECONDS={duration:.2f}")
         print(f"DEVICE_USED={device_used}")
+        print("REUSED_TRANSCRIPT=false")
         return 0
 
     except KeyboardInterrupt:
