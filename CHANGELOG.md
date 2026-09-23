@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- `meeting-summary`: tái sử dụng transcript đã có khi chạy lại cùng recording và output, tránh chạy Whisper lại không cần thiết.
+- `meeting-summary`: thêm chế độ force transcribe khi người dùng chủ động yêu cầu nhận diện lại recording.
+
 ## 1.0.0
 
 - Khởi tạo repository `AI-SKILLS` theo mô hình multi-skill.
