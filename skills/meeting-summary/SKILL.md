@@ -24,11 +24,12 @@ Quy tắc nhận tham số:
 2. Nếu `output_dir` trống, hỏi người dùng thư mục gốc muốn lưu kết quả.
 3. Chỉ bắt đầu xử lý khi có đủ cả hai giá trị.
 4. Hỗ trợ: `.mp4`, `.mkv`, `.mov`, `.webm`, `.mp3`, `.wav`, `.m4a`.
-5. Không phụ thuộc thư mục hiện tại của Claude Code.
-6. Không copy, sửa hoặc xóa file nguồn.
-7. Không tạo file trong repository hiện tại; mọi output phải nằm dưới `output_dir`.
+5. Khi chạy lại cùng file nguồn và cùng `output_dir`, phải ưu tiên tái sử dụng `transcript.txt` đã có thay vì transcribe lại.
+6. Không phụ thuộc thư mục hiện tại của Claude Code.
+7. Không copy, sửa hoặc xóa file nguồn.
+8. Không tạo file trong repository hiện tại; mọi output phải nằm dưới `output_dir`.
 
-## Bước 1: Transcribe local
+## Bước 1: Tái sử dụng transcript hoặc transcribe local
 
 Chạy script PowerShell của skill:
 
@@ -41,19 +42,30 @@ Thay `<INPUT>` và `<OUTPUT>` bằng hai đường dẫn đã xác định ở t
 Script sẽ:
 
 - kiểm tra file đầu vào;
-- tạo thư mục kết quả theo tên file nguồn;
-- nếu thư mục kết quả đã tồn tại thì tạo thư mục mới có timestamp để không ghi đè;
+- tìm transcript đã có của cùng file nguồn trong `output_dir`;
+- ưu tiên đúng thư mục `<output_dir>\<tên-file>\transcript.txt`;
+- nếu không có thư mục đúng tên thì tìm bản kết quả có timestamp mới nhất chứa `transcript.txt`;
+- nếu tìm thấy transcript hợp lệ: tái sử dụng ngay, không chạy Whisper lại và trả `REUSED_TRANSCRIPT=true`;
+- nếu chưa có transcript: tạo thư mục kết quả theo tên file nguồn;
+- nếu cần tạo mới nhưng thư mục kết quả đã tồn tại thì tạo thư mục mới có timestamp để không ghi đè;
 - dùng `faster-whisper` với model `large-v3`;
 - ép ngôn ngữ `vi`;
 - ưu tiên CUDA nếu dùng được, tự fallback CPU `int8` nếu CUDA lỗi;
 - tạo `transcript.txt` trong thư mục kết quả;
-- in ra các dòng `OUTPUT_DIR=...` và `TRANSCRIPT_PATH=...` khi thành công.
+- in ra các dòng `OUTPUT_DIR=...`, `TRANSCRIPT_PATH=...` và `REUSED_TRANSCRIPT=...` khi thành công.
+
+Mặc định khi người dùng chỉ muốn tạo lại summary hoặc format summary thay đổi, phải dùng transcript sẵn có.
+Chỉ khi người dùng nói rõ muốn nhận diện lại recording/transcribe lại từ đầu mới chạy script với thêm `-ForceTranscribe`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${CLAUDE_SKILL_DIR}\scripts\transcribe.ps1" -InputPath "<INPUT>" -OutputRoot "<OUTPUT>" -ForceTranscribe
+```
 
 Nếu script thất bại: dừng, báo ngắn gọn lỗi thực tế. Không tạo summary từ transcript thiếu hoặc lỗi.
 
 ## Bước 2: Đọc transcript
 
-Lấy chính xác `TRANSCRIPT_PATH` từ output của script.
+Lấy chính xác `TRANSCRIPT_PATH` từ output của script, bất kể transcript vừa được tạo hay được tái sử dụng.
 
 Đọc TOÀN BỘ transcript trước khi viết summary. Nếu file dài, đọc tuần tự theo nhiều phần cho đến hết. Không chỉ dựa trên đoạn đầu hoặc một vài đoạn tìm kiếm.
 
