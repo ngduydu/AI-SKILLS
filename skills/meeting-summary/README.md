@@ -9,8 +9,9 @@ Skill transcribe audio/video bằng `faster-whisper` chạy local, sau đó Clau
 - Nhận file audio/video cuộc họp.
 - Transcribe tiếng Việt bằng `faster-whisper` với model `large-v3`.
 - Ưu tiên CUDA và fallback CPU `int8` khi cần.
-- Không ghi đè kết quả cũ.
-- Tạo `transcript.txt`.
+- **Tự tái sử dụng `transcript.txt` đã có**, không chạy Whisper lại khi chỉ cần cập nhật/tạo lại summary.
+- Có tùy chọn `-ForceTranscribe` khi thực sự muốn nhận diện lại recording.
+- Không ghi đè transcript khi tái sử dụng.
 - Tạo `summary.md` theo format chuẩn của skill.
 - Có mục `Các việc cần làm`, chỉ ghi công việc, không gán người phụ trách hoặc tự phân rã chi tiết.
 
@@ -48,7 +49,35 @@ D:\Meeting-Summary\NPC Rent\
 └── summary.md
 ```
 
-Nếu thư mục cùng tên đã tồn tại, skill tạo thư mục mới có timestamp thay vì ghi đè.
+### Chạy lại sau khi đổi format summary
+
+Cứ gọi lại cùng command:
+
+```text
+/meeting-summary "D:\Record\NPC Rent.mp4" "D:\Meeting-Summary"
+```
+
+Nếu đã có transcript phù hợp, skill sẽ:
+
+```text
+MP4
+→ tìm transcript.txt đã có
+→ bỏ qua Whisper
+→ đọc lại transcript
+→ tạo lại summary.md
+```
+
+Vì vậy thay đổi format summary không làm mất thêm thời gian transcription.
+
+Nếu có nhiều thư mục kết quả cùng meeting, skill chọn transcript có thời gian sửa mới nhất.
+
+### Muốn bắt buộc transcribe lại
+
+Chỉ dùng khi recording thay đổi hoặc transcript cũ không đạt chất lượng. Skill sẽ gọi script với:
+
+```powershell
+-ForceTranscribe
+```
 
 ## Dependency
 
