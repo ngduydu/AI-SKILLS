@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "AI-SKILLS",
+  "version": "1.0.0",
+  "defaultTarget": "claude",
+  "skills": [
+    {
+      "name": "meeting-summary",
+      "description": "Chuyển recording cuộc họp tiếng Việt thành transcript local và bản tổng hợp.",
+      "path": "skills/meeting-summary",
+      "targets": [
+        "claude"
+      ],
+      "installer": "tools/installers/meeting-summary.ps1",
+      "uninstaller": "tools/uninstallers/meeting-summary.ps1"
+    }
+  ]
+}

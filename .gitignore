@@ -1,0 +1,106 @@
+# ============================================================
+# AI-SKILLS - Git Ignore
+# ============================================================
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.secret
+*.secrets
+*.key
+*.pem
+*.pfx
+*.p12
+*.cer
+*.crt
+*.token
+*.tokens
+secrets/
+.secret/
+.credentials/
+credentials/
+auth.json
+credentials.json
+
+# Local configuration
+config.local.json
+settings.local.json
+appsettings.Local.json
+appsettings.Development.local.json
+*.local.json
+*.local.yaml
+*.local.yml
+
+# Claude / AI agent local state
+.claude/settings.local.json
+.claude/cache/
+.claude/logs/
+
+# MCP / local databases / indexes
+.mcp.local.json
+*.db
+*.sqlite
+*.sqlite3
+index/
+indexes/
+.cache/
+cache/
+.codebase-memory/
+codebase-memory/
+.codegraph/
+
+# Logs / temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Build / generated output
+dist/
+build/
+out/
+output/
+coverage/
+test-results/
+reports/
+debug/
+
+# Package managers / Python runtime
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE / editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archives / backups
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bak
+*.backup
+*.old
+
+# Private scratch files
+scratch/
+private/
+personal/
+notes.local/
