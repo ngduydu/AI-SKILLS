@@ -1,12 +1,98 @@
 # AI-SKILLS
 
-Repository private dùng để quản lý các AI skill dùng chung của team.
+Kho skill AI có thể tái sử dụng, hiện tập trung vào **Claude Code**.
 
-Repository này là **source of truth**. Không chỉnh sửa trực tiếp skill đã được cài trong thư mục user của AI agent.
+Repository này là **source of truth** cho các skill. Skill được quản lý trong Git, cài vào user scope và có thể dùng ở nhiều project mà không phải copy thủ công từng repo.
 
-Hiện tại target được hỗ trợ là Claude Code.
+## Skill hiện có
 
-## Cấu trúc
+| Skill | Mục đích | Target |
+|---|---|---|
+| `meeting-summary` | Chuyển recording cuộc họp tiếng Việt thành transcript local và tổng hợp nội dung, quyết định, việc cần làm | Claude Code |
+
+## Cài nhanh
+
+### 1. Clone repository
+
+```powershell
+git clone https://github.com/ngduydu/AI-SKILLS.git
+cd AI-SKILLS
+```
+
+### 2. Chuẩn bị dependency
+
+Hiện `meeting-summary` cần `uv`.
+
+Kiểm tra:
+
+```powershell
+uv --version
+```
+
+Nếu chưa có `uv`, cài theo hướng dẫn chính thức của Astral rồi chạy lại installer.
+
+### 3. Cài toàn bộ skill
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\install.ps1
+```
+
+Skill được cài vào user scope:
+
+```text
+%USERPROFILE%\.claude\skills\
+```
+
+Vì vậy Claude Code có thể gọi skill ở bất kỳ project/folder nào.
+
+## Cài một skill
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\install.ps1 -Skill meeting-summary
+```
+
+## Update
+
+Sau khi pull source mới:
+
+```powershell
+git pull
+powershell -ExecutionPolicy Bypass -File .\tools\update.ps1
+```
+
+Update một skill:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\update.ps1 -Skill meeting-summary
+```
+
+## Gỡ skill
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\uninstall.ps1 -Skill meeting-summary
+```
+
+Nếu không truyền `-Skill`, script sẽ gỡ toàn bộ skill được khai báo trong `manifest.json`.
+
+## Ví dụ: meeting-summary
+
+```text
+/meeting-summary "D:\Record\NPC Rent.mp4" "D:\Meeting-Summary"
+```
+
+Kết quả:
+
+```text
+D:\Meeting-Summary\NPC Rent\
+├── transcript.txt
+└── summary.md
+```
+
+Nếu transcript của recording đó đã tồn tại, skill sẽ **tái sử dụng transcript** và chỉ tạo lại `summary.md`; không chạy Whisper lại trừ khi người dùng chủ động yêu cầu transcribe lại.
+
+Chi tiết: `skills/meeting-summary/README.md`.
+
+## Cấu trúc repository
 
 ```text
 AI-SKILLS/
@@ -17,54 +103,21 @@ AI-SKILLS/
 ├── docs/                   # Quy chuẩn phát triển skill
 ├── manifest.json           # Danh mục skill
 ├── CHANGELOG.md
-└── .gitignore
+├── CONTRIBUTING.md
+├── SECURITY.md
+└── LICENSE
 ```
-
-## Cài toàn bộ skill
-
-Mở PowerShell tại root repository:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\install.ps1
-```
-
-## Cài một skill
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\install.ps1 -Skill meeting-summary
-```
-
-## Update toàn bộ skill
-
-Sau khi `git pull`:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\update.ps1
-```
-
-Update một skill:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\update.ps1 -Skill meeting-summary
-```
-
-## Gỡ một skill
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\uninstall.ps1 -Skill meeting-summary
-```
-
-Nếu không truyền `-Skill`, lệnh uninstall sẽ gỡ toàn bộ skill được khai báo trong `manifest.json`.
 
 ## Thêm skill mới
 
-Bắt buộc đọc trước:
+Đọc trước:
 
 ```text
 docs/creating-skills.md
+docs/conventions.md
 ```
 
-Quy chuẩn chung:
+Quy chuẩn:
 
 ```text
 Nội dung skill       -> skills/<skill-name>/
@@ -79,14 +132,29 @@ Không tạo nested folder kiểu:
 skills/<skill-name>/skill/<skill-name>/
 ```
 
-## Git và dữ liệu nhạy cảm
+## Nguyên tắc
 
-Trước khi commit luôn kiểm tra:
+- Mỗi skill giải quyết một workflow lặp lại có giá trị tái sử dụng.
+- Ưu tiên input/output đơn giản; ẩn complexity kỹ thuật phía dưới.
+- Không phụ thuộc project hiện tại nếu skill được thiết kế cho user scope.
+- Không commit runtime, model cache, log, transcript, recording hoặc output của người dùng.
+- Không commit secret, token, credential hoặc dữ liệu nội bộ.
+- Thay đổi đi qua branch và Pull Request.
 
-```powershell
-git status
-git add .
-git status
-```
+## Bảo mật và quyền riêng tư
 
-Không commit secret, token, credential, `.env`, virtual environment, cache, database local, log hoặc output sinh tự động.
+Một số skill có thể xử lý dữ liệu local. Ví dụ `meeting-summary` chạy speech-to-text bằng `faster-whisper` local trước khi Claude đọc transcript để tạo summary.
+
+Người dùng cần tự đánh giá dữ liệu nào phù hợp để đưa cho AI agent theo chính sách của tổ chức mình.
+
+Xem thêm: `SECURITY.md`.
+
+## Đóng góp
+
+Pull Request và issue được hoan nghênh.
+
+Xem: `CONTRIBUTING.md`.
+
+## License
+
+MIT — xem `LICENSE`.
