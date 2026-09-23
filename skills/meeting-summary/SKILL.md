@@ -1,6 +1,6 @@
 ---
 name: meeting-summary
-description: Chuyển file ghi âm/video cuộc họp tiếng Việt thành transcript local bằng faster-whisper và tạo bản tổng hợp nội dung, các kết luận đã chốt, các việc cần làm, vấn đề chưa chốt, chỉ đạo và thông tin kỹ thuật quan trọng.
+description: Chuyển file ghi âm/video cuộc họp tiếng Việt thành transcript local bằng faster-whisper và tạo bản tổng hợp nội dung, các kết luận đã chốt, các việc cần làm, vấn đề chưa chốt, chỉ đạo và thông tin kỹ thuật quan trọng. Tự tái sử dụng transcript đã có để không chạy Whisper lại khi chỉ cần tạo lại summary.
 argument-hint: '"<input-path>" "<output-directory>"'
 arguments:
   - input_path
@@ -28,7 +28,7 @@ Quy tắc nhận tham số:
 6. Không copy, sửa hoặc xóa file nguồn.
 7. Không tạo file trong repository hiện tại; mọi output phải nằm dưới `output_dir`.
 
-## Bước 1: Transcribe local
+## Bước 1: Lấy transcript
 
 Chạy script PowerShell của skill:
 
@@ -38,7 +38,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${CLAUDE_SKILL_DIR}\scr
 
 Thay `<INPUT>` và `<OUTPUT>` bằng hai đường dẫn đã xác định ở trên.
 
-Script sẽ:
+Script sẽ ưu tiên **tái sử dụng transcript đã có**:
+
+1. Từ tên file nguồn, tìm các thư mục kết quả tương ứng dưới `output_dir`.
+2. Nếu tìm thấy `transcript.txt`, chọn transcript mới nhất.
+3. Trả về ngay `OUTPUT_DIR` và `TRANSCRIPT_PATH`.
+4. **Không chạy Whisper lại.**
+5. Nếu chưa có transcript phù hợp thì mới chạy transcription local như bình thường.
+
+Khi tái sử dụng transcript, output sẽ có:
+
+```text
+REUSED_TRANSCRIPT=1
+OUTPUT_DIR=...
+TRANSCRIPT_PATH=...
+```
+
+Khi chưa có transcript, script sẽ:
 
 - kiểm tra file đầu vào;
 - tạo thư mục kết quả theo tên file nguồn;
@@ -48,6 +64,12 @@ Script sẽ:
 - ưu tiên CUDA nếu dùng được, tự fallback CPU `int8` nếu CUDA lỗi;
 - tạo `transcript.txt` trong thư mục kết quả;
 - in ra các dòng `OUTPUT_DIR=...` và `TRANSCRIPT_PATH=...` khi thành công.
+
+Chỉ khi người dùng **chủ động yêu cầu nhận diện lại từ recording**, mới gọi script với `-ForceTranscribe`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${CLAUDE_SKILL_DIR}\scripts\transcribe.ps1" -InputPath "<INPUT>" -OutputRoot "<OUTPUT>" -ForceTranscribe
+```
 
 Nếu script thất bại: dừng, báo ngắn gọn lỗi thực tế. Không tạo summary từ transcript thiếu hoặc lỗi.
 
@@ -68,9 +90,11 @@ Không cần phân tích ai nói câu nào. Tập trung vào:
 - yêu cầu/chỉ đạo quan trọng;
 - thông tin kỹ thuật quan trọng nếu có.
 
-## Bước 3: Tạo `summary.md`
+## Bước 3: Tạo hoặc cập nhật `summary.md`
 
-Tạo file `summary.md` trong chính `OUTPUT_DIR` mà script trả về.
+Tạo hoặc ghi lại file `summary.md` trong chính `OUTPUT_DIR` mà script trả về.
+
+Nếu đang tái sử dụng transcript thì **chỉ tạo lại summary**, không đụng vào `transcript.txt`.
 
 Nội dung phải hoàn toàn bằng tiếng Việt và dùng đúng cấu trúc sau:
 
@@ -177,5 +201,6 @@ Chỉ tạo các mục con thực sự có nội dung, ví dụ:
 Sau khi ghi `summary.md`, chỉ báo ngắn gọn:
 
 - Đã hoàn tất.
+- Transcript được tạo mới hay tái sử dụng.
 - Đường dẫn `transcript.txt`.
 - Đường dẫn `summary.md`.

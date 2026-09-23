@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "name": "AI-SKILLS",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "defaultTarget": "claude",
   "skills": [
     {
       "name": "meeting-summary",
-      "description": "Chuyển recording cuộc họp tiếng Việt thành transcript local và bản tổng hợp.",
+      "description": "Chuyển recording cuộc họp tiếng Việt thành transcript local và bản tổng hợp; tự tái sử dụng transcript đã có khi chạy lại.",
       "path": "skills/meeting-summary",
       "targets": [
         "claude"
