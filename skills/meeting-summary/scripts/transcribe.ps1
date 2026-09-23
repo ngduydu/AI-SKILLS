@@ -3,7 +3,9 @@ param(
     [string]$InputPath,
 
     [Parameter(Mandatory = $true)]
-    [string]$OutputRoot
+    [string]$OutputRoot,
+
+    [switch]$ForceTranscribe
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,7 +32,18 @@ if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
     Fail "meeting-summary runtime is missing: $VenvRoot. Reinstall the skill from the AI-SKILLS repository."
 }
 
-& $PythonExe $PythonScript --input $InputPath --output-root $OutputRoot --model "large-v3"
+$Arguments = @(
+    $PythonScript,
+    "--input", $InputPath,
+    "--output-root", $OutputRoot,
+    "--model", "large-v3"
+)
+
+if ($ForceTranscribe) {
+    $Arguments += "--force-transcribe"
+}
+
+& $PythonExe @Arguments
 $ExitCode = $LASTEXITCODE
 
 if ($ExitCode -ne 0) {
